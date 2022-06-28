@@ -1,5 +1,5 @@
 ---
-title: '【环境准备-2】oflash在windows和ubuntu上如何使用及驱动安装&&EasyOpenJTag的使用方法'
+title: '【S3C2440环境搭建】oflash在windows和ubuntu上如何使用及驱动安装&&EasyOpenJTag的使用方法'
 categories: [嵌入式]
 tags: [S3C2440]
 date: 2022-06-26
@@ -16,13 +16,13 @@ eop是百问网开发的，比较容易使用。它的优点什么的，参考�
 
 eop长成这个样子
 
-<img src="pic/eop.png" width=400>
+<img src="./pic/eop.png" width=400>
 
 eop和开发板的连接方法
 
-<img src="pic/eop_with_jz2440.png" width=400>
+<img src="./pic/eop_with_jz2440.png" width=400>
 
-<img src="pic/eop_with_jz2440_1.png" width=400>
+<img src="./pic/eop_with_jz2440_1.png" width=400>
 
 
 ## 2.oflash在ubuntu上的使用
@@ -44,28 +44,28 @@ oflash其实在ubuntu上使用时并不需要驱动软件，直接使用即可�
 ### a.安装驱动
 将开发板通过EasyOpenJTag连接到PC上后，需要安装驱动，设备管理器显示如下。
 
-![](pic/eop_with_no_drive.png)
+![](./pic/eop_with_no_drive.png)
 
 右键->更新驱动程序软件->浏览计算机以查找驱动程序软件
 
-![](pic/eop_with_on_drive_1.png)
+![](./pic/eop_with_on_drive_1.png)
 
 
-![](pic/eop_with_no_drive_2.png)
+![](./pic/eop_with_no_drive_2.png)
 
 接下来需要找到资料中提供的驱动程序，目录如下
 
-![](pic/eop_with_no_drive_3.png)
+![](./pic/eop_with_no_drive_3.png)
 
 如果你是64位windows系统，选择amd64；32位系统，选择i386。
 
 >安装时，会出现一些问题，如下。
 >
-><img src="pic/drive_install_err1.png" width=300>
+> <img src="./pic/drive_install_err1.png" width=300>
 >
 >以及
 >
-><img src="pic/drive_install_err2.png" width=300>
+><img src="./pic/drive_install_err2.png" width=300>
 >
 >参考 《windows驱动安装问题》
 
@@ -73,13 +73,13 @@ oflash其实在ubuntu上使用时并不需要驱动软件，直接使用即可�
 ### b.执行
 驱动安装完成。在命令行中，直接执行oflash即可。
 
-![](pic/oflash_on_windows.png)
+![](./pic/oflash_on_windows.png)
 
 
 ## 4.oflash的使用方法
 oflash的使用方法
 
-![](pic/oflash_function.png)
+![](./pic/oflash_function.png)
 
 如图中所示
 标号|作用

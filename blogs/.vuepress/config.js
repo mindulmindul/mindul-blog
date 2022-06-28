@@ -6,6 +6,7 @@ const nav = require("./config/nav.js");
 
 module.exports = {
     title: "绍威的blog",
+    description: "曾梦想仗剑走天涯，后来bug多没去",
     port: 2233,
     head: [
         // 在移动端，搜索框在获得焦点时会放大，并且在失去焦点后可以左右滚动，这可以通过设置元来优化。
@@ -32,7 +33,7 @@ module.exports = {
         editLinks: true,
         // 默认为 "Edit this page"
         editLinkText: "发现错误？",
-        //在所有页面中启用自动生成子侧边栏，原 sidebar 仍然兼容
+        //在所有页面中启用自动生成子侧边栏（右边的小目录），原 sidebar 仍然兼容
         subSidebar: "auto",
         // 博客配置
         blogConfig: {
@@ -63,12 +64,10 @@ module.exports = {
         mode: 'auto',
         // 主题选择按钮
         modePicker: true,
-        //如果需要右边的目录，可以设置这个选项，但是左边的会小时
-        //subSidebar: true, //在所有页面中启用自动生成子侧边栏，原 sidebar 仍然兼容
 
+        nav,
         sideBar,
         locales,
-        nav,
     },
     plugins,
 }

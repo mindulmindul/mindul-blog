@@ -1,5 +1,5 @@
 ---
-title: '3.1 ubuntu上编译安装openocd'
+title: '【S3C2440环境搭建】3.1 ubuntu上编译安装openocd'
 categories: [嵌入式]
 tags: [S3C2440]
 date: 2022-06-26
@@ -12,20 +12,20 @@ date: 2022-06-26
 ## 1.configure错误
 我一开始直接执行了./configure，make和make install。安装成功，但是这个时候，执行命令的时候就出现了问题。
 
-![](pic/run_error_1.png)
+![](./pic/run_error_1.png)
 
 可以看到，当前的命令不光不支持ftdi，而且没有任何支持的interface。所以，我觉得自己编译安装的过程中，肯定犯了错误。
 查看历史记录（感谢xshell提供的最大200000行的显示记录），可以找到如下情况
 
-![](pic/configure_error_1.png)
+![](./pic/configure_error_1.png)
 
 可以看到，不支持任何interface。既然有这种问题，再看看configure过程中有哪些东西缺失了。
 
-![](pic/configure_error_1_reason.png)
+![](./pic/configure_error_1_reason.png)
 
 而且，再查看./configure命令的帮助，发现有--enable-ftdi选项。
 
-![](pic/configure_help.png)
+![](./pic/configure_help.png)
 
 使用apt安装相应的缺少的包：libusb1，hidapi，libjaylink，libftdi。
 
@@ -43,7 +43,7 @@ ldconfig -p | grep libjaylink
 使用这个命令就可以知道/etc/ld.so.cache应该刷新哪些目录中的信息了。
 然后再使用```ldconfig```将这个cache文件更新。
 
-![](pic/configure_error_1_resolution.png)
+![](./pic/configure_error_1_resolution.png)
 
 >（图中的PKG_CONFIG_PATH变量是用来配置ldconfig的搜索目录的，和/etc/ld.so.conf文件的功能一样，不过我发现虽然/usr/lib)
 
@@ -56,12 +56,12 @@ ldconfig -p | grep libjaylink
 ```
 可以看到问题解决了
 
-![](pic/configure_error_1_ok.png)
+![](./pic/configure_error_1_ok.png)
 
 ## 2.make错误
 make的时候，出现以下错误。
 
-![](pic/make_error_1.png)
+![](./pic/make_error_1.png)
 
 可以看到```-Werror=implicit-fallthrough=```
 这个问题还是configure时候的问题，说是什么把警告当成错误，中断编译。需要重新configure下，加上如下选项，把werror给禁止掉就行了。
@@ -72,7 +72,7 @@ make的时候，出现以下错误。
 
 > 这里只是简单地看下结果，想要运行起来，需要先看第三节。
 
-![](pic/run.png)
+![](./pic/run.png)
 
 可以看到图中运行结果，已经成功选择了jtag设备。
 > 但是还是没有成功连接，因为mini2440.cfg文件有点问题。
@@ -86,13 +86,13 @@ make的时候，出现以下错误。
 openocd想要运行起来，需要先配置设备命名规则。
 设备命名规则文件在openocd源码中有提供，即解压缩后的contrib/60-openocd.rules，文件注释中写着# Copy this file to /etc/udev/rules.d/。照做，然后使用lsusb命令，查看设备的ID。
 
-![](pic/query_id_lsusb.png)
+![](./pic/query_id_lsusb.png)
 
 记下来 ID 1457:5118
 
 编辑刚刚复制过去的文件如下
 
-![](pic/set_rules.png)
+![](./pic/set_rules.png)
 
 然后``` service udev restart```重启udev服务。
 
@@ -117,11 +117,11 @@ target|CUP配置文件
 
 
 如图
-![](pic/find_cfg.png)
+![](./pic/find_cfg.png)
 
 这里我又对比了一下mini2440.cfg和samsung_s3c2440.cfg两个文件，如下
 
-![](pic/compare.png)
+![](./pic/compare.png)
 
 可以看到，其实mini2440.cfg的target部分，就是抄的samsung_s3c2440.cfg的。所以，可以不再使用samsung_s3c2440.cfg
 
@@ -132,19 +132,19 @@ openocd -f CFG_FILE -f CFG_FILE1 -f CFG_FILE2
 ```
 执行情况如下
 
-![](pic/run_error_2.png)
+![](./pic/run_error_2.png)
 
 这破问题，为难了我一个晚上，最后，抱着蒙一把的心态，把124行给注释掉了。居然就可以了。
 
-![](pic/run_error_2_resolution.png)
+![](./pic/run_error_2_resolution.png)
 
-![](pic/run_error_2_ok.png)
+![](./pic/run_error_2_ok.png)
 
 这下就跑通了。
 
 如图中所示，使用```telnet localhost 4444```即可登录并调试了。
 
-![](pic/telnetOK.png)
+![](./pic/telnetOK.png)
 
 使用```help_2440```查看帮助
 

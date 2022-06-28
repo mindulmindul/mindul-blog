@@ -1,3 +1,9 @@
+---
+title: '【S3C2440裸机实验】nand flash'
+categories: [嵌入式]
+tags: [S3C2440, arm, nand, 裸机]
+date: 2022-06-28
+---
 # NAND FLASH的使用
 
 ## NAND FLASH的原理与连线
@@ -6,11 +12,11 @@
 
 NAND FLASH并不是通过存储管理器来访问的，因为它采用另外一种访问方式。JZ2440v3采用的NAND FLASH是三星公司生产的**K9F2G08U0C**，采用2KBytes为一页的大页结构，总容量为2Gbits。如图1所示，是NAND FLASH的引脚图：
 
-![](pic/1_nand_link.png)
+![](./pic/1_nand_link.png)
 
 如图2所示，是芯片的俯视图
 
-![](pic/2_nand_look.png)
+![](./pic/2_nand_look.png)
 
 NAND FLASH的地址、命令、数据都通过8个DATA(I/O)引脚传入（这样可以减少芯片引脚个数，同时使得系统很容易升级到更大的容量（只需要在软件层面改变控制逻辑））；使用ALE、CLE信号来区分地址和命令；R/B引脚为Ready/nBusy状态引脚，用来判断芯片当前是否忙；nWE和nRE两个引脚，则是用来控制DATA口是输入还是输出。具体如下表所示：
 
@@ -40,7 +46,7 @@ N.C | 不接
 
 NAND FLASH内部构造如下图所示
 
-![](pic/3_nand_inner.png)
+![](./pic/3_nand_inner.png)
 
 我们列出部分内部部件的功能如下
 内部部件 | 功能
@@ -54,13 +60,13 @@ Page Register & S/A | 页寄存器，用于缓冲读写时传输的数据，大�
 
 用来存储数据的内部部件就是NAND FLASH ARRAY，它的构造图如下
 
-![](pic/3_nand_array.png)
+![](./pic/3_nand_array.png)
 
 K9F2G08U0C容量为2Gbit+64Mbit（512MB+8MB），分为128K页、2048+64列，其中每列大小为8bit。可以看到，每页都有64Bytes的额外空间，但是他们并不会被记入地址空间中。
 
 NAND FLASH是按行列形式访问的，直观的看，它的行地址、列地址就匹配到了128K页，2048列了。于是行地址为17bit，列地址为11bit。但是I/O口只有8bit，这就需要分批传入地址信号。这个传输过程的时序如图所示
 
-![](pic/4_row_column.png)
+![](./pic/4_row_column.png)
 
 
 ## NAND FLASH的控制
@@ -86,7 +92,7 @@ Read Status 2 | F1h | - | O
 
 可以看到有些命令需要两个周期，这两个周期其实并不是挨着的，而是存在一定的关系。更加详细的信息需要参看命令时序图（K9F2G08U0C.pdf和K9F2G08U0M.pdf)，这里仅仅放Read的时序图：
 
-![](pic/5_Read_time.png)
+![](./pic/5_Read_time.png)
 
 可以看到00H和30H之间还有地址信息的传送。
 
@@ -100,15 +106,15 @@ S3C2440的NAND FLASH控制器提供了以下寄存器，用来访问NAND FLASH�
 
 1. NFCONF(NAND FLASH配置寄存器)
     
-    ![](pic/6_NFCONF.png)
+    ![](./pic/6_NFCONF.png)
 
     TACLS、TWRPH0、THRPH1三个bit控制的是NAND FLASH 信号线CLE/ALE与写控制信号nWE的时序关系。如图所示
     
-    ![](pic/6_time_seq.png)
+    ![](./pic/6_time_seq.png)
 
     剩下四个信号用来表示是否支持其他类型的NAND FLASH，这四个信号不是由软件控制的（对软件是只读的），而是由外部引脚决定（复位或从睡眠模式唤醒时这些引脚的值）
 
-    ![](pic/6_bit4-0.png)
+    ![](./pic/6_bit4-0.png)
 
 2. NFCONT(NAND FLASH控制寄存器)
     
@@ -158,7 +164,7 @@ S3C2440的NAND FLASH控制器提供了以下寄存器，用来访问NAND FLASH�
 
     此前我们介绍NAND的地址写入时，有时序表如下。需要将col和row 拆分出来。然后在不同周期依次传入I/O接口。
 
-    ![](pic/4_row_column.png)
+    ![](./pic/4_row_column.png)
 
    ```c
     NFADDR = col & 0xff;

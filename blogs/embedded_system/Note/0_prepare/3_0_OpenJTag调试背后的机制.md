@@ -1,5 +1,5 @@
 ---
-title: '【环境准备-3.0】使用OpenJTag仿真器配合OpenOCD调试背后的机制'
+title: '【S3C2440环境搭建】使用OpenJTag仿真器配合OpenOCD调试背后的机制'
 categories: [嵌入式]
 tags: [S3C2440]
 date: 2022-06-26

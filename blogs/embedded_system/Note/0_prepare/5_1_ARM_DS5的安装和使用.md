@@ -1,5 +1,5 @@
 ---
-title: '5.1 ARM_DS5的安装和使用'
+title: '【S3C2440环境搭建】5.1 ARM_DS5的安装和使用'
 categories: [嵌入式]
 tags: [S3C2440]
 date: 2022-06-26
@@ -40,13 +40,13 @@ $patcher.exe --license=ARM_DS_5 "C:\AppData\DS5"
 
 STEP C: 添加证书
 
-Run DS-5, from Help menu -> ARM License Manager...
+    Run DS-5, from Help menu -> ARM License Manager...
 
-Add License... 
+    Add License... 
+    
+    use a license file
 
-use a license file
+    select the file generated in Step B
 
-select the file generated in Step B
-
-Select DS-5 Ultimate Edition as the toolkit you intend to use
+    Select DS-5 Ultimate Edition as the toolkit you intend to use
 

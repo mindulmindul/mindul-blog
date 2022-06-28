@@ -1,8 +1,8 @@
 ---
-title: '【实验】GPIO练习'
+title: '【S3C2440裸机实验】GPIO'
 categories: [嵌入式]
-tags: [S3C2440, arm]
-date: 2022-06-26
+tags: [S3C2440, arm, gpio, 裸机]
+date: 2022-06-28
 ---
 
 # GPIO练习

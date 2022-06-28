@@ -1,5 +1,5 @@
 ---
-title: '【环境准备-1】arm-linux-gcc-4.4.3的安装'
+title: '【S3C2440环境搭建】arm-linux-gcc-4.4.3的安装'
 categories: [嵌入式]
 tags: [S3C2440]
 date: 2022-06-26

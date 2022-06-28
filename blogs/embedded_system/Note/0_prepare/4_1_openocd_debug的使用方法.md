@@ -1,5 +1,5 @@
 ---
-title: '4.1 openocd_debug的使用方法'
+title: '【S3C2440环境搭建】4.1 openocd_debug的使用方法'
 categories: [嵌入式]
 tags: [S3C2440]
 date: 2022-06-26
@@ -94,11 +94,11 @@ Disassembly of section .text:
 现在在windows上做示范：
 参看3_2_windows上使用openocd，使用telnet的方法连接上。
 
-<img src="pic/telnet_connected.png" height=600>
+<img src="./pic/telnet_connected.png" height=600>
 
 此时板子上的led1，led2在交互闪烁。
 
-<img src="pic/led_blink.gif" height=600>
+<img src="./pic/led_blink.gif" height=600>
 
 
 ## 命令及命令的使用
@@ -112,7 +112,7 @@ bp \<addr\> \<ins_len\> |相当于gdb中的break，给程序设置断点，addr�
 
 可以从以下视频中看出各个指令的作用：
 
-<img src="pic/debug_cmd_show.gif">
+<img src="./pic/debug_cmd_show.gif">
 
 以下是各条指令
 ```
