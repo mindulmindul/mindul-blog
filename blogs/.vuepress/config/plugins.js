@@ -54,13 +54,23 @@ module.exports = [
   //     //修改分页数量
   //     perPage: 18
   // }],
-  [
-    "@vuepress-reco/vuepress-plugin-rss",
-    {
-      //RSS
-      site_url: "https://kimyang.cn",
-    },
-  ],
+  // [
+  //   "@vuepress-reco/vuepress-plugin-rss",
+  //   {
+  //     //RSS
+  //     site_url: "https://kimyang.cn",
+  //   },
+  // ], 
+  
+    // // 自动生成侧边栏的插件
+    // [
+    //   "vuepress-plugin-auto-sidebar",
+    //   {
+    //     collapse: {
+    //       open: true,
+    //     },
+    //   },
+    // ],
   // ['@vuepress-reco/vuepress-plugin-bulletin-popover', {
   //     width: '300px', // 默认 260px
   //     title: '欢迎关注',
