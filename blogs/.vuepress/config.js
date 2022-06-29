@@ -1,6 +1,7 @@
 //const themeReco = require("./config/theme_reco.js");
 const plugins = require("./config/plugins");
-const sideBar = require("./config/side_bar.js");
+const side_bar = require("./config/side_bar.js");
+console.log(side_bar);
 const locales = require('./config/locale.js');
 const nav = require("./config/nav.js");
 
@@ -64,9 +65,32 @@ module.exports = {
         mode: 'auto',
         // 主题选择按钮
         modePicker: true,
-
+        //side_bar,
+        sidebar: side_bar,
+        // {
+        //     '/embedded_system/Note/0_prepare/': [
+        //         {
+        //             title: '开发环境准备',
+        //             collapsable: true,
+        //             children: [
+        //                 '',
+        //                 '/embedded_system/Note/0_prepare/1_arm-linux-gcc-4.4.3的安装.md',
+        //                 '/embedded_system/Note/0_prepare/2_B1_windows驱动安装问题.md',
+        //                 '/embedded_system/Note/0_prepare/2_oflash在windows和ubuntu上如何使用及驱动安装.md',
+        //                 '/embedded_system/Note/0_prepare/3_0_OpenJTag调试背后的机制.md',
+        //                 '/embedded_system/Note/0_prepare/3_1_ubuntu上编译安装openocd.md',
+        //                 '/embedded_system/Note/0_prepare/3_2_windows上使用openocd.md',
+        //                 '/embedded_system/Note/0_prepare/4_1_openocd_debug的使用方法.md',
+        //                 '/embedded_system/Note/0_prepare/5_1_ARM_DS5的安装和使用.md',
+        //                 '/embedded_system/Note/0_prepare/5_2_使用gdb调试.md',
+        //                 '/embedded_system/Note/0_prepare/5_3_mdk5.12的安装和使用.md',
+        //             ]
+        //         },
+        //     ],
+    
+        // },
         nav,
-        sideBar,
+        
         locales,
     },
     plugins,
