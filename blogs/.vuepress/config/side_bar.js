@@ -27,6 +27,51 @@ module.exports = {
             ]
         },
     ],
+    '/linux_kernel/': [
+        {
+            title: '基础知识',
+            collapsable: true,
+            children: [
+                '/linux_kernel/0.basic_knowledge/',
+                '/linux_kernel/0.basic_knowledge/1.Linux的宏内核与模块.html',
+            ]
+        },
+        {
+            title: '进程管理',
+            collapsable: true,
+            children: [
+                '/linux_kernel/1.process_management/',
+            ]
+        },
+        {
+            title: '内存管理',
+            collapsable: true,
+            children: [
+                '/linux_kernel/2.memory_management/',
+            ]
+        },
+        {
+            title: 'VFS',
+            collapsable: true,
+            children: [
+                '/linux_kernel/3.VFS/',
+            ]
+        },
+        {
+            title: '设备驱动',
+            collapsable: true,
+            children: [
+                '/linux_kernel/4.device_driver/',
+            ]
+        },
+        {
+            title: '网络',
+            collapsable: true,
+            children: [
+                '/linux_kernel/5.net/',
+            ]
+        },
+    ]
 }
 
     // sidrbar: {

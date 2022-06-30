@@ -13,15 +13,16 @@ module.exports = [
     },
 
     {
-        text: "Android",
-        items: [
-          { text: "0. 书籍与博客推荐", link: "/embedded_system/Note/0_prepare/1_arm-linux-gcc-4.4.3的安装.md" },
-          { text: "【韦东山S3C2440】工具手册", link: "/embedded_system/Note/1_toolmanual" },
-          { text: "【韦东山S3C2440】中断简介", link: "/embedded_system/Note/2_int" },
-          { text: "【韦东山S3C2440】实验", link: "/embedded_system/Note/test" },
-        ],
-        icon: "reco-category",
-      },
+      text: "Linux内核",
+      items: [
+        { text: "【linux内核】进程管理", link: "/linux_kernel/1.process_management/" },
+        { text: "【linux内核】内存管理", link: "/linux_kernel/2.memory_management/" },
+        { text: "【linux内核】VFS", link: "/linux_kernel/3.VFS/" },
+        { text: "【linux内核】设备驱动", link: "/linux_kernel/4.device_driver/" },
+        { text: "【linux内核】网络管理", link: "/linux_kernel/5.net/" },
+      ],
+      icon: "reco-category",
+  },
 
     { text: '标签', link: '/tag/', icon: 'reco-tag' },
 

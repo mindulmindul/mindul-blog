@@ -62,15 +62,15 @@ module.exports = [
   //   },
   // ], 
   
-    // // 自动生成侧边栏的插件
-    // [
-    //   "vuepress-plugin-auto-sidebar",
-    //   {
-    //     collapse: {
-    //       open: true,
-    //     },
-    //   },
-    // ],
+  // // 自动生成侧边栏的插件
+  // [
+  //   "vuepress-plugin-auto-sidebar",
+  //   {
+  //     collapse: {
+  //       open: true,
+  //     },
+  //   },
+  // ],
   // ['@vuepress-reco/vuepress-plugin-bulletin-popover', {
   //     width: '300px', // 默认 260px
   //     title: '欢迎关注',

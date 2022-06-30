@@ -39,7 +39,7 @@ module.exports = {
         // 博客配置
         blogConfig: {
 
-            // 这个category只有在文章开头的yaml中配置了  categories: [开发环境准备]    才会显示到页面上
+            // 这个category只有在文章开头的yaml中配置了如  categories: [开发环境准备]    才会显示到页面上
             category: {
                 location: 2,     // 在导航栏菜单中所占的位置，默认2
                 text: '分类' // 默认文案 “分类”
