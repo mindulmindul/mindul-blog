@@ -33,7 +33,7 @@ module.exports = {
             collapsable: true,
             children: [
                 '/linux_kernel/0.basic_knowledge/',
-                '/linux_kernel/0.basic_knowledge/1.Linux的宏内核与模块.html',
+                '/linux_kernel/0.basic_knowledge/1_Linux的宏内核与模块.md',
             ]
         },
         {
