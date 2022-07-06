@@ -33,7 +33,8 @@ module.exports = {
             collapsable: true,
             children: [
                 '/linux_kernel/0.basic_knowledge/',
-                '/linux_kernel/0.basic_knowledge/1_Linux的宏内核与模块.md',
+                '/linux_kernel/0.basic_knowledge/1_Linux的宏内核的由来.md',
+                '/linux_kernel/0.basic_knowledge/2_编译Linux内核的方法.md',
             ]
         },
         {
@@ -69,6 +70,14 @@ module.exports = {
             collapsable: true,
             children: [
                 '/linux_kernel/5.net/',
+            ]
+        },
+        {
+            title: '其他',
+            collapsable: true,
+            children: [
+                '/linux_kernel/others/Documentation/',
+                '/linux_kernel/others/reference/',
             ]
         },
     ]
