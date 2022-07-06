@@ -80,6 +80,23 @@ module.exports = {
                 '/linux_kernel/others/reference/',
             ]
         },
+    ],
+    '/Android/': [
+        {
+            title: 'rk3399学习',
+            collapsable: true,
+            children: [
+                '/Android/rk3399/',
+                '/Android/rk3399/0_hardware_burn/0_3399开发板链接、烧录与编译.md',
+            ]
+        },
+        {
+            title: '其他',
+            collapsable: true,
+            children: [
+                '/Android/others/',
+            ]
+        },
     ]
 }
 

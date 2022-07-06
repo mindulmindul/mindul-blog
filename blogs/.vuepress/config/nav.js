@@ -11,15 +11,24 @@ module.exports = [
       ],
       icon: "reco-category",
     },
-
+    {
+      text: "Andorid",
+      items: [
+        { text: "rk3399开发板学习", link: "/Android/rk3399/" },
+        { text: "其他", link: "/Android/others/" },
+      ],
+      icon: "reco-category",
+    },
     {
       text: "Linux内核",
       items: [
-        { text: "【linux内核】进程管理", link: "/linux_kernel/1.process_management/" },
-        { text: "【linux内核】内存管理", link: "/linux_kernel/2.memory_management/" },
-        { text: "【linux内核】VFS", link: "/linux_kernel/3.VFS/" },
-        { text: "【linux内核】设备驱动", link: "/linux_kernel/4.device_driver/" },
-        { text: "【linux内核】网络管理", link: "/linux_kernel/5.net/" },
+        { text: "基础知识", link: "/linux_kernel/0.basic_knowledge/" },
+        { text: "进程管理", link: "/linux_kernel/1.process_management/" },
+        { text: "内存管理", link: "/linux_kernel/2.memory_management/" },
+        { text: "VFS", link: "/linux_kernel/3.VFS/" },
+        { text: "设备驱动", link: "/linux_kernel/4.device_driver/" },
+        { text: "网络管理", link: "/linux_kernel/5.net/" },
+        { text: "其他", link: "/linux_kernel/others/" },
       ],
       icon: "reco-category",
   },

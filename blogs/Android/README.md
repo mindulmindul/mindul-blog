@@ -1,6 +1,6 @@
 ---
-title: '【just for test】'
+title: 'Android学习'
 categories: [Android]
-tags: [书籍推荐, Android]
+tags: [Android]
 date: 2022-06-26
 ---
