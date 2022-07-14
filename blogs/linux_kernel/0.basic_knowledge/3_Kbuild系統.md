@@ -250,7 +250,21 @@ vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
 # 注意init-y等在给$(vmlinux-dirs)赋值后才被设置成init/built-in.o，这$(vmlinux-dirs)就只是一系列目录
 ```
 
-最终vmlinux-dirs的值如下：
+暂且不去探索init-m、core-m等变量的值，可以通过添加以下日志，打印make执行到这里时$(vmlinux-dirs)的值。
+
+```makefile
+$(vmlinux-dirs): prepare scripts
+    @echo wangshaowei +: $(vmlinux-dirs)			# 注意这里必须要用$(vmlinux-dirs)，而不是$@
+    $(Q)$(MAKE) $(build)=$@
+```
+
+然后执行```make -j1 -n V=1```后得到输出如下：
+
+![rule_vmlinux-dirs_command_echo_vmlinux-dirs](.\pic\3\rule_vmlinux-dirs_command_echo_vmlinux-dirs.png)
+
+可以看到，输出了不只一次，按理说，这个输出应该只有一次的，因为目标只写了一次，但是Make的隐藏规则会把```$(vmlinux-dirs)```作为```target```的规则复制成多个以```$(vmlinux-dirs)的值```作为```target```但```prerequisite```和```command```不变的规则，这个效果随后会被展示出来。
+
+根据输出结果，vmlinux-dirs的值如下：
 
 来源 | 值
 -|-
@@ -263,9 +277,7 @@ libs-y 		|	lib
 libs-m		|	arch/x86/lib
 virt-y		|	virt
 
-> TODO: 上述表格是我修改Makefile直接打印的$(vmlinux-dirs)获得的，具体的libs-m的值和drivers-m的值是怎么获得的，我目前还不是很清楚
-
-
+> TODO: 具体的libs-m的值和drivers-m的值是怎么获得的，我目前还不是很清楚
 
 ```$(vmlinux-dirs)```这个```target```的依赖和命令如下：
 
@@ -288,11 +300,17 @@ $(vmlinux-dirs): prepare scripts
 
 ![$(vmlinux-dirs)_deps](./pic/3/vmlinux-dirs_deps.png)
 
-图中绿色部分表示该依赖的规则中有```command```需要执行。蓝色部分表示之前的依赖不在./Makefile中定义，而是在此部分include的文件中。
+图中
+
+* 绿色部分表示该依赖的规则中有```command```需要执行；
+* 蓝色部分表示之前的依赖不在./Makefile中定义，而是在此部分include的文件中；
+* 灰色部分表示该目标没有prerequisite和command。
 
 > TODO: 这部分的依赖的command执行过程需要分析一下，放到《Kbuild系统中的特殊变量与函数》中。
 
 ### $(vmlinux-dirs)的command
+
+
 
 ```Makefile
 # <Makefile>
@@ -322,23 +340,204 @@ $(vmlinux-dirs): prepare scripts
 # 关于$(Q)在上一章《Kbuild系统中的特殊变量与函数》有介绍
 ```
 
-所以```$(vmlinux-dirs)```这个```target```会对自己所代表的每个目录执行
+所以```$(vmlinux-dirs)```这个规则会自动转换成多个规则，这些规则的```target```就是```$(vmlinux-dirs)```的值，如下：
 
 ```bash
-make -f ./scripts/Makefile.build obj=CUR_DIR	# CUR_DIR代表$(vmlinux_dirs)中的每个目录
-# -f FILE 	使用FILE作为Makefile，所以make会执行./scripts/Makefile.build
-# obj=		定义变量obj，在执行上述脚本时，obj变量的值
+init: prepare scripts
+	$(Q)$(MAKE) $(build)=$@
+usr: prepare scripts
+	$(Q)$(MAKE) $(build)=$@
+...
+virt: prepare scripts
+	$(Q)$(MAKE) $(build)=$@
 ```
 
-执行```make -j1 V=1```的话，可以获得以下日志：
+在```$(vmlinux-dirs)```规则的```command```添加如下日志打印：
 
-![make_build_obj](./pic/3/make_build_obj.png)
+```bash
+$(vmlinux-dirs): prepare scripts
+    @echo wangshaowei +: target is $@			# 注意这里必须要用$@，而不是$(vmlinux-dirs)
+    $(Q)$(MAKE) $(build)=$@
+```
+
+得到结果如下：
+
+![rule_vmlinux-dirs_command_echo_every_dir](.\pic\3\rule_vmlinux-dirs_command_echo_every_dir.png)
+
+所以最后```$(vmlinux-dirs)```的```command```会执行如下多个命令：
+
+```
+make build := -f $(srctree)/scripts/Makefile.build obj=init
+make build := -f $(srctree)/scripts/Makefile.build obj=usr
+make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86
+make build := -f $(srctree)/scripts/Makefile.build obj=kernel
+make build := -f $(srctree)/scripts/Makefile.build obj=certs
+make build := -f $(srctree)/scripts/Makefile.build obj=mm
+make build := -f $(srctree)/scripts/Makefile.build obj=fs
+make build := -f $(srctree)/scripts/Makefile.build obj=ipc
+make build := -f $(srctree)/scripts/Makefile.build obj=securits
+make build := -f $(srctree)/scripts/Makefile.build obj=crypto
+make build := -f $(srctree)/scripts/Makefile.build obj=block
+make build := -f $(srctree)/scripts/Makefile.build obj=drivers
+make build := -f $(srctree)/scripts/Makefile.build obj=sound
+make build := -f $(srctree)/scripts/Makefile.build obj=firmware
+make build := -f $(srctree)/scripts/Makefile.build obj=ubuntu
+make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/pci
+make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/power
+make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/video
+make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/ras
+make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/oprofile
+make build := -f $(srctree)/scripts/Makefile.build obj=net
+make build := -f $(srctree)/scripts/Makefile.build obj=lib
+make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/lib
+make build := -f $(srctree)/scripts/Makefile.build obj=virt
+
+$(srctree)代表内核源码根目录
+```
+
+因此最重要的就是分析```scripts/Makefile.build```在```obj```变量的值不同的情况下，会执行哪些操作。
 
 ## scripts/Makefile.build
 
+接下来就需要看scripts/Makefile.build做了什么，按理说应该直接找```default target```然后分析```prerequisite```和```command```的，但是这个文件其实做了挺多事的。所以从上到下的分析下
 
+1. $(src)的定义```src := $(obj)```
 
+2. 定义```default target```
 
+   ```makefile
+   PHONY := __build
+   __build:
+   ```
+
+3. 预定义接下来要声明的变量，都定义为空值
+
+   ```makefile
+   # Init all relevant variables used in kbuild files so
+   # 1) they have correct type
+   # 2) they do not inherit any value from the environment
+   obj-y :=
+   obj-m :=
+   lib-y :=
+   lib-m :=
+   always :=
+   targets :=
+   subdir-y :=
+   subdir-m :=
+   EXTRA_AFLAGS   :=
+   EXTRA_CFLAGS   :=
+   EXTRA_CPPFLAGS :=
+   EXTRA_LDFLAGS  :=
+   asflags-y  :=
+   ccflags-y  :=
+   cppflags-y :=
+   ldflags-y  :=
+   subdir-asflags-y :=
+   subdir-ccflags-y :=
+   ```
+
+4. 包含```auto.conf```和```scrits/Kbuild.include```
+
+   ```makefile
+   # Read auto.conf if it exists, otherwise ignore
+   -include include/config/auto.conf
+   
+   include scripts/Kbuild.include
+   ```
+
+5. 给```$(CLFAGS)```备份
+
+   ```makefile
+   # For backward compatibility check that these variables do not change
+   save-cflags := $(CFLAGS)
+   ```
+
+6. 将```$(obj)```所指定的目录下的```Kbuild```或```Makefile```包含进来
+
+   ```makefile
+   # The filename Kbuild has precedence over Makefile
+   kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))
+   kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbuild-dir)/Makefile)
+   include $(kbuild-file)
+   ```
+
+   这里的```$(src)```在第一步被定义为```$(obj)```，可以添加如下日志代码把三个变量打印出来
+
+   ```makefile
+   # The filename Kbuild has precedence over Makefile
+   kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))
+   kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbuild-dir)/Makefile)
+   $(warning wangshaowei ++: src is $(src); kbuild-dir is $(kbuild-dir); kbuild-file is $(kbuild-file))
+   include $(kbuild-file)
+   ```
+
+   执行```make -n -j1```有如下打印：
+
+   ![make_echo_kbuild-file](.\pic\3\make_echo_kbuild-file.png)
+
+7. 根据第5步备份的```$(CFLAGS)```，判断第6步包含了```$(src)/Makefile```或```$(src)/Kbuild```后，该变量是否发生了变化，如果变化了，报警
+
+   ```makefile
+   # If the save-* variables changed error out
+   ifeq ($(KBUILD_NOPEDANTIC),)
+           ifneq ("$(save-cflags)","$(CFLAGS)")
+                   $(error CFLAGS was changed in "$(kbuild-file)". Fix it to use ccflags-y)
+           endif
+   endif
+   ```
+
+8. 包含```scripts/Makefile.lib```
+
+   ```makefile
+   include scripts/Makefile.lib
+   ```
+
+9. 把```host-progs```和```hostprogs-y```的值合并，```host-progs```已经废弃了，如果用了会产生报警
+
+   ```makefile
+   ifdef host-progs
+   ifneq ($(hostprogs-y),$(host-progs))
+   $(warning kbuild: $(obj)/Makefile - Usage of host-progs is deprecated. Please replace with hostprogs-y!)
+   hostprogs-y += $(host-progs)
+   endif
+   endif
+   ```
+
+10. 判断第6步包含了```$(src)/Makefile```或```$(src)/Kbuild```后，文件中是否有声明```host rules```，如果有就把```scripts/Makefile.host```包含进来
+
+    ```makefile
+    # Do not include host rules unless needed
+    ifneq ($(hostprogs-y)$(hostprogs-m)$(hostlibs-y)$(hostlibs-m)$(hostcxxlibs-y)$(hostcxxlibs-m),)
+    include scripts/Makefile.host
+    endif
+    ```
+
+    我添加了一些日志如下：
+
+    ```makefile
+    # Do not include host rules unless needed
+    ifneq ($(hostprogs-y)$(hostprogs-m)$(hostlibs-y)$(hostlibs-m)$(hostcxxlibs-y)$(hostcxxlibs-m),)
+    $(warning wangshaowei +++:【$(hostprogs-y)】; 【$(hostprogs-m)】; )
+    $(warning wangshaowei +++:【$(hostlibs-y)】;  【$(hostlibs-m)】; )
+    $(warning wangshaowei +++:【$(hostcxxlibs-y)】; 【$(hostcxxlibs-m)】; )
+    include scripts/Makefile.host
+    endif
+    ```
+
+    执行后结果如下：
+
+    ![make_echo_host_rules](.\pic\3\make_echo_host_rules.png)
+
+    可以在```usr/Makefile```中找到对应的```hostprogs-y```的定义：
+
+    ```makefile
+    # <usr/Makefile>
+    hostprogs-y := gen_init_cpio
+    # <arch/x86/entry/vdso>
+    hostprogs-y			+= vdso2c
+    ```
+
+11. 
 
 
 ## +$(call if_changed,link-vmlinux)
