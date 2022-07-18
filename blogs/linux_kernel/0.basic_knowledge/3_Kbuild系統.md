@@ -1,5 +1,5 @@
 ---
-title: 'Linux内核编译系统 Kbuild介绍'
+title: 'Linux内核编译系统'
 categories: [【Linux内核】基础知识]
 tags: [linux_kernel, kbuild]
 date: 2022-07-11
@@ -9,7 +9,7 @@ date: 2022-07-11
 ## make
 关于make的比较好的参考资料，可以看陈皓大佬的[跟我一起写makefile](https://seisman.github.io/how-to-write-makefile/overview.html)。
 
-# 1. kernel目录下的Makefile解析
+# 1. Make默认目标
 
 Makefile的第一个目标```_all```
 ```Makefile
@@ -52,7 +52,7 @@ endif
 
 所以我们的分析也分成两部分，解析```all```和解析```module```。
 
-##  _all:all
+#  2. _all:all
 
 ```Makefile
 # <Makefile>
@@ -71,6 +71,8 @@ vmlinux: scripts/link-vmlinux.sh vmlinux_prereq $(vmlinux-deps) FORCE
     +$(call if_changed,link-vmlinux)
 ```
 接下来依次分析```vmlinux```各个依赖
+
+## prerequisite
 
 ### vmlinux_prereq
 
@@ -110,7 +112,7 @@ PHONY += vmlinux_prereq
 vmlinux_prereq: $(vmlinux-deps) FORCE
     $(Q)ln -fsn `cd $(srctree) && /bin/pwd`/scripts/gdb/vmlinux-gdb.py
 ```
-这个命令会在源码目录下创建一个软连接vmlinux-gdb到scripts/gdb/vmlinux-gdb.py，如下图：
+这个命令会在源码目录下创建一个软链接vmlinux-gdb到scripts/gdb/vmlinux-gdb.py，如下图：
 
 ![vmlinux_prereq_make_soft_link](./pic/3/vmlinux_prereq_make_soft_link.png)
 
@@ -118,8 +120,9 @@ vmlinux_prereq: $(vmlinux-deps) FORCE
 
 ```FORCE```是一个伪目标，所以如果这个伪目标是某个target的依赖，那么这个target每次都会执行，因为```FORCE```每次都会执行，且每次都会被认为是较新的。所以，vmlinux这个目标，即便各个built-in.o没有修改，但也会会被重新生成。
 
+### $(vmlinux-deps)
 
-### $(vmlinux_deps)
+先看定义
 
 ```Makefile
 # <Makefile>
@@ -155,7 +158,7 @@ libs-y      := $(libs-y1) $(libs-y2)
 virt-y      := $(patsubst %/, %/built-in.o, $(virt-y))
 ```
 
-参考第一章的参考资料，patsubst函数会把“/”替换成“/built-in.o”。
+参考第0节的参考资料，patsubst函数会把“/”替换成“/built-in.o”。
 
 而```head-y```在arch/目录下，如下：
 
@@ -186,7 +189,7 @@ ARCH        ?= $(SUBARCH)
 ...
 SRCARCH     := $(ARCH)        # SRCARCH := x86
 ```
-故此```head-y```如下：
+对于x86架构，```head-y```如下：
 ```Makefile
 # <arch/x86/Makefile>
 # Kernel objects
@@ -223,15 +226,17 @@ endif
 * arch/x86/kernel/platform-quirk.o
 * arch/x86/kernel/vmlinux.lds
 
-既然$(vmlinux_deps)本身是个依赖，说明它其实也是一个目标，其规则如下：
+再看规则：
 
 ```Makefile
 # <Makefile>
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
-$(sort $(vmlinux-deps)): $(vmlinux-dirs) ;    # 说明其依赖为$(vmlinux-dirs)
+$(sort $(vmlinux-deps)): $(vmlinux-dirs) ;    # 说明其prerequisite为$(vmlinux-dirs)，没有对应的command
 ```
-而```$(vmlinux-dirs)```如下：
+### $(vmlinux-dirs)
+
+先看定义
 
 ```Makefile
 # <Makefile>
@@ -253,6 +258,7 @@ vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
 暂且不去探索init-m、core-m等变量的值，可以通过添加以下日志，打印make执行到这里时$(vmlinux-dirs)的值。
 
 ```makefile
+# <Makefile>
 $(vmlinux-dirs): prepare scripts
     @echo wangshaowei +: $(vmlinux-dirs)			# 注意这里必须要用$(vmlinux-dirs)，而不是$@
     $(Q)$(MAKE) $(build)=$@
@@ -262,7 +268,7 @@ $(vmlinux-dirs): prepare scripts
 
 ![rule_vmlinux-dirs_command_echo_vmlinux-dirs](.\pic\3\rule_vmlinux-dirs_command_echo_vmlinux-dirs.png)
 
-可以看到，输出了不只一次，按理说，这个输出应该只有一次的，因为目标只写了一次，但是Make的隐藏规则会把```$(vmlinux-dirs)```作为```target```的规则复制成多个以```$(vmlinux-dirs)的值```作为```target```但```prerequisite```和```command```不变的规则，这个效果随后会被展示出来。
+可以看到，输出了不只一次，按理说，这个输出应该只有一次的，因为目标只写了一次，但是Make会把```$(vmlinux-dirs)```作为```target```的规则复制成多个以```$(vmlinux-dirs)的值```作为```target```但```prerequisite```和```command```不变的规则，这个规则可以参考[**多目标**](https://seisman.github.io/how-to-write-makefile/rules.html#id7)，之后我会证明这点。
 
 根据输出结果，vmlinux-dirs的值如下：
 
@@ -277,9 +283,9 @@ libs-y 		|	lib
 libs-m		|	arch/x86/lib
 virt-y		|	virt
 
-> TODO: 具体的libs-m的值和drivers-m的值是怎么获得的，我目前还不是很清楚
+> TODO: libs-m的值和drivers-m的值来自于arch/x86/Makefile，或者说来自于对应架构的Makefile，主makefile在给$(vmlinux-dirs)赋值前就已经把arch/x86/Makefile包含进来了。
 
-```$(vmlinux-dirs)```这个```target```的依赖和命令如下：
+再看规则
 
 ```Makefile
 # <Makefile>
@@ -290,7 +296,6 @@ virt-y		|	virt
 # Error messages still appears in the original language
 
 PHONY += $(vmlinux-dirs)
-# 以$(vmlinux-dris)为target又设置了一个新的规则
 $(vmlinux-dirs): prepare scripts        
 	$(Q)$(MAKE) $(build)=$@
 ```
@@ -310,13 +315,12 @@ $(vmlinux-dirs): prepare scripts
 
 ### $(vmlinux-dirs)的command
 
-
-
 ```Makefile
 # <Makefile>
-
 include scripts/Kbuild.include
 # $(build)定义在scripts/Kbuild.include中
+
+------------------------------------------------------------
 
 # <scripts/Kbuild.include>
 ###
@@ -324,6 +328,8 @@ include scripts/Kbuild.include
 # Usage:
 # $(Q)$(MAKE) $(build)=dir
 build := -f $(srctree)/scripts/Makefile.build obj
+
+------------------------------------------------------------
 
 # <Makefile>
 # Handle descending into subdirectories listed in $(vmlinux-dirs)
@@ -339,6 +345,8 @@ $(vmlinux-dirs): prepare scripts
 # $(MAKE)是make预设的变量，代表自身
 # 关于$(Q)在上一章《Kbuild系统中的特殊变量与函数》有介绍
 ```
+
+> TODO: $(Q)等的赋值，放到《Kbuild系统中的特殊变量与函数》中。
 
 所以```$(vmlinux-dirs)```这个规则会自动转换成多个规则，这些规则的```target```就是```$(vmlinux-dirs)```的值，如下：
 
@@ -370,23 +378,7 @@ $(vmlinux-dirs): prepare scripts
 make build := -f $(srctree)/scripts/Makefile.build obj=init
 make build := -f $(srctree)/scripts/Makefile.build obj=usr
 make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86
-make build := -f $(srctree)/scripts/Makefile.build obj=kernel
-make build := -f $(srctree)/scripts/Makefile.build obj=certs
-make build := -f $(srctree)/scripts/Makefile.build obj=mm
-make build := -f $(srctree)/scripts/Makefile.build obj=fs
-make build := -f $(srctree)/scripts/Makefile.build obj=ipc
-make build := -f $(srctree)/scripts/Makefile.build obj=securits
-make build := -f $(srctree)/scripts/Makefile.build obj=crypto
-make build := -f $(srctree)/scripts/Makefile.build obj=block
-make build := -f $(srctree)/scripts/Makefile.build obj=drivers
-make build := -f $(srctree)/scripts/Makefile.build obj=sound
-make build := -f $(srctree)/scripts/Makefile.build obj=firmware
-make build := -f $(srctree)/scripts/Makefile.build obj=ubuntu
-make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/pci
-make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/power
-make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/video
-make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/ras
-make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/oprofile
+...
 make build := -f $(srctree)/scripts/Makefile.build obj=net
 make build := -f $(srctree)/scripts/Makefile.build obj=lib
 make build := -f $(srctree)/scripts/Makefile.build obj=arch/x86/lib
@@ -395,157 +387,152 @@ make build := -f $(srctree)/scripts/Makefile.build obj=virt
 $(srctree)代表内核源码根目录
 ```
 
-因此最重要的就是分析```scripts/Makefile.build```在```obj```变量的值不同的情况下，会执行哪些操作。
+可以看到```Makefile```直接把所有重要的工作交给了```Makefile.build```，只负责给它传递不同的```$(obj)```。这个脚本的工作，直接参考第3章。
 
-## scripts/Makefile.build
+## command
 
-接下来就需要看scripts/Makefile.build做了什么，按理说应该直接找```default target```然后分析```prerequisite```和```command```的，但是这个文件其实做了挺多事的。所以从上到下的分析下
+```if_changed```的详细分析过程参考[Kbuild系统中的特殊变量与函数](./3/1_Kbuild系统中的特殊变量与函数.md)，这里简单介绍下其大概功能：
 
-1. $(src)的定义```src := $(obj)```
+1. 判断已经生成的依赖是否有更新以及是否有未生成的依赖，如果满足条件则执行2；否则结束；
+2. 根据make命令的V参数，判断打印命令的详情或是简略信息或是原因；
+3. 执行命令；
+4. 将命令保存到对应的cmd隐藏文件中
 
-2. 定义```default target```
+所以如果执行```make```，```+$(call if_changed,link-vmlinux)```会找到```cmd_link-vmlinux```将其打印出来并执行。cmd_link-vmlinux如下：
 
-   ```makefile
-   PHONY := __build
-   __build:
-   ```
+```makefile
+# Final link of vmlinux with optional arch pass after final link
+    cmd_link-vmlinux =                                                 \
+	$(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_vmlinux) ;       \
+	$(if $(ARCH_POSTLINK), $(MAKE) -f $(ARCH_POSTLINK) $@, true)
+```
 
-3. 预定义接下来要声明的变量，都定义为空值
+随后将该命令保存到```.vmlinux.cmd```中，可以执行```make -j1 -n```查看，如下：
 
-   ```makefile
-   # Init all relevant variables used in kbuild files so
-   # 1) they have correct type
-   # 2) they do not inherit any value from the environment
-   obj-y :=
-   obj-m :=
-   lib-y :=
-   lib-m :=
-   always :=
-   targets :=
-   subdir-y :=
-   subdir-m :=
-   EXTRA_AFLAGS   :=
-   EXTRA_CFLAGS   :=
-   EXTRA_CPPFLAGS :=
-   EXTRA_LDFLAGS  :=
-   asflags-y  :=
-   ccflags-y  :=
-   cppflags-y :=
-   ldflags-y  :=
-   subdir-asflags-y :=
-   subdir-ccflags-y :=
-   ```
+![if_changed_vmlinux](.\pic\3\if_changed_vmlinux.png)
 
-4. 包含```auto.conf```和```scrits/Kbuild.include```
-
-   ```makefile
-   # Read auto.conf if it exists, otherwise ignore
-   -include include/config/auto.conf
-   
-   include scripts/Kbuild.include
-   ```
-
-5. 给```$(CLFAGS)```备份
-
-   ```makefile
-   # For backward compatibility check that these variables do not change
-   save-cflags := $(CFLAGS)
-   ```
-
-6. 将```$(obj)```所指定的目录下的```Kbuild```或```Makefile```包含进来
-
-   ```makefile
-   # The filename Kbuild has precedence over Makefile
-   kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))
-   kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbuild-dir)/Makefile)
-   include $(kbuild-file)
-   ```
-
-   这里的```$(src)```在第一步被定义为```$(obj)```，可以添加如下日志代码把三个变量打印出来
-
-   ```makefile
-   # The filename Kbuild has precedence over Makefile
-   kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))
-   kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbuild-dir)/Makefile)
-   $(warning wangshaowei ++: src is $(src); kbuild-dir is $(kbuild-dir); kbuild-file is $(kbuild-file))
-   include $(kbuild-file)
-   ```
-
-   执行```make -n -j1```有如下打印：
-
-   ![make_echo_kbuild-file](.\pic\3\make_echo_kbuild-file.png)
-
-7. 根据第5步备份的```$(CFLAGS)```，判断第6步包含了```$(src)/Makefile```或```$(src)/Kbuild```后，该变量是否发生了变化，如果变化了，报警
-
-   ```makefile
-   # If the save-* variables changed error out
-   ifeq ($(KBUILD_NOPEDANTIC),)
-           ifneq ("$(save-cflags)","$(CFLAGS)")
-                   $(error CFLAGS was changed in "$(kbuild-file)". Fix it to use ccflags-y)
-           endif
-   endif
-   ```
-
-8. 包含```scripts/Makefile.lib```
-
-   ```makefile
-   include scripts/Makefile.lib
-   ```
-
-9. 把```host-progs```和```hostprogs-y```的值合并，```host-progs```已经废弃了，如果用了会产生报警
-
-   ```makefile
-   ifdef host-progs
-   ifneq ($(hostprogs-y),$(host-progs))
-   $(warning kbuild: $(obj)/Makefile - Usage of host-progs is deprecated. Please replace with hostprogs-y!)
-   hostprogs-y += $(host-progs)
-   endif
-   endif
-   ```
-
-10. 判断第6步包含了```$(src)/Makefile```或```$(src)/Kbuild```后，文件中是否有声明```host rules```，如果有就把```scripts/Makefile.host```包含进来
-
-    ```makefile
-    # Do not include host rules unless needed
-    ifneq ($(hostprogs-y)$(hostprogs-m)$(hostlibs-y)$(hostlibs-m)$(hostcxxlibs-y)$(hostcxxlibs-m),)
-    include scripts/Makefile.host
-    endif
-    ```
-
-    我添加了一些日志如下：
-
-    ```makefile
-    # Do not include host rules unless needed
-    ifneq ($(hostprogs-y)$(hostprogs-m)$(hostlibs-y)$(hostlibs-m)$(hostcxxlibs-y)$(hostcxxlibs-m),)
-    $(warning wangshaowei +++:【$(hostprogs-y)】; 【$(hostprogs-m)】; )
-    $(warning wangshaowei +++:【$(hostlibs-y)】;  【$(hostlibs-m)】; )
-    $(warning wangshaowei +++:【$(hostcxxlibs-y)】; 【$(hostcxxlibs-m)】; )
-    include scripts/Makefile.host
-    endif
-    ```
-
-    执行后结果如下：
-
-    ![make_echo_host_rules](.\pic\3\make_echo_host_rules.png)
-
-    可以在```usr/Makefile```中找到对应的```hostprogs-y```的定义：
-
-    ```makefile
-    # <usr/Makefile>
-    hostprogs-y := gen_init_cpio
-    # <arch/x86/entry/vdso>
-    hostprogs-y			+= vdso2c
-    ```
-
-11. 
+![.vmlinux.cmd](.\pic\3\.vmlinux.cmd.png)
 
 
-## +$(call if_changed,link-vmlinux)
-规则前边的+表示，即使当前正在```make -n```（表示只打印命令，不执行），这个命令也会被执行。
 
-函数call会调用```if_changed```
+# 3. scripts/Makefile.build
 
-TODO: ```if_changed``` 和 ```$($(quiet)$(cmd))```
+接下来就需要看scripts/Makefile.build做了什么，直接找```default target```，如下：
+
+```makefile
+# <scripts/Makefile.build>
+PHONY := __build
+__build:
+...
+__build: $(if $(KBUILD_BUILTIN),$(builtin-target) $(lib-target) $(extra-y)) \
+	 $(if $(KBUILD_MODULES),$(obj-m) $(modorder-target)) \
+	 $(subdir-ym) $(always)
+	@:
+```
+
+可见```__build```rule的```command```为“:”，在bash中，这代表什么都不做。所以只需要分析其```prerequisite```，首先看两个变量的定义，如下：
+
+```makefile
+# <Makefile>
+KBUILD_MODULES :=
+KBUILD_BUILTIN := 1
+
+# If we have only "make modules", don't compile built-in objects.
+# When we're building modules with modversions, we need to consider
+# the built-in objects during the descend as well, in order to
+# make sure the checksums are up to date before we record them.
+
+ifeq ($(MAKECMDGOALS),modules)
+  KBUILD_BUILTIN := $(if $(CONFIG_MODVERSIONS),1)
+endif
+
+# If we have "make <whatever> modules", compile modules
+# in addition to whatever we do anyway.
+# Just "make" or "make all" shall build modules as well
+
+ifneq ($(filter all _all modules,$(MAKECMDGOALS)),)
+  KBUILD_MODULES := 1
+endif
+
+ifeq ($(MAKECMDGOALS),)
+  KBUILD_MODULES := 1
+endif
+
+export KBUILD_MODULES KBUILD_BUILTIN
+```
+
+```$(MAKECMDGOALS)```是make的特殊变量，用来表示make的第一个参数，我们分析的是```__all: all```，这是默认目标，make没有参数。所以```$(KBUILD_MODULES)```和```$(KBUILD_BUILTIN)```的值都是1，于是```__build```rule就是
+
+```makefile
+__build: $(builtin-target) $(lib-target) $(extra-y) \
+		 $(obj-m) $(modorder-target) \
+		 $(subdir-ym) $(always)
+	@:
+```
+
+接下来依次分析每个变量的值
+
+## $(builtin-target)
+
+定义如下：
+
+```makefile
+# <scripts/Makefile.build>
+src := $(obj)
+
+# The filename Kbuild has precedence over Makefile
+kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))		# srctree在__all:all的情况下，是源码根目录
+kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbuild-dir)/Makefile)
+# $(warning wangshaowei [obj]: src is $(src); kbuild-dir is $(kbuild-dir); kbuild-file is $(kbuild-file))	# 注释去掉打印日志
+include $(kbuild-file)
+...
+ifneq ($(strip $(obj-y) $(obj-m) $(obj-) $(subdir-m) $(lib-target)),)
+builtin-target := $(obj)/built-in.o
+endif
+
+```
+
+首先看```kbuild-file```，可以追加一些日志后，执行```make -j1 -n```，打印如下
+
+![](./pic/3/make_echo_kbuild_file.png)
+
+随后，```include $(kbuild-file)```就会将```$(obj)```指定的目录下的```Kbuild```或```Makefile```包含进来，这些文件中一般会定义```obj-y```等变量，可以参考[驱动程序员需要知道的Kbuild知识](./驱动程序员需要知道的Kbuild知识.md)。在```obj```作为给定条件的情况下，```builtin-target```为```$(obj)/built-in.o```。
+
+接下来看```$(builtin-target)```的规则
+
+```makefile
+# <scripts/Makfile.build>
+#
+# Rule to compile a set of .o files into one .o file
+#
+ifdef builtin-target
+
+ifdef CONFIG_THIN_ARCHIVES				# 根据.config文件中对CONFIG_THIN_ARCHIVES的定义来区分使用ar命令还是使用ld命令。
+  cmd_make_builtin = rm -f $@; $(AR) rcST$(KBUILD_ARFLAGS)
+  cmd_make_empty_builtin = rm -f $@; $(AR) rcST$(KBUILD_ARFLAGS)
+  quiet_cmd_link_o_target = AR      $@
+else
+  cmd_make_builtin = $(LD) $(ld_flags) -r -o
+  cmd_make_empty_builtin = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS)
+  quiet_cmd_link_o_target = LD      $@
+endif
+
+# If the list of objects to link is empty, just create an empty built-in.o
+cmd_link_o_target = $(if $(strip $(obj-y)),\
+		      $(cmd_make_builtin) $@ $(filter $(obj-y), $^) \
+		      $(cmd_secanalysis),\
+		      $(cmd_make_empty_builtin) $@)
+
+$(builtin-target): $(obj-y) FORCE
+	$(call if_changed,link_o_target)
+
+targets += $(builtin-target)
+endif # builtin-target
+```
+
+### prerequisite
+
+
 
 # _all:module
 
