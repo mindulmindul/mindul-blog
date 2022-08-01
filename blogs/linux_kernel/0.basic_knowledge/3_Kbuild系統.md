@@ -32,7 +32,7 @@ _all: modules
 endif
 
 ```
-$(KBUILD_EXTMOD)的值如下：
+```$(KBUILD_EXTMOD)```的值如下：
 
 ```Makefile
 # <Makefile>
@@ -102,7 +102,7 @@ CONFIG_GDB_SCRIPTS=y
 # CONFIG_TRIM_UNUSED_KSYMS is not set
 ```
 
-所以```vmlinux_prereq```发生了变化，如下：
+所以```vmlinux_prereq```规则最终如下，如下：
 ```Makefile
 # <Makefile>
 # Include targets which we want to execute sequentially if the rest of the
@@ -417,9 +417,7 @@ $(srctree)代表内核源码根目录
 
 # 3. scripts/Makefile.build
 
-Linux内核源码可能有很多层目录，不可能为每层目录都设置一个单独的Makefile来配置该层的编译流程，这样只是在重复写Makefile，没有意义。因此Kbuild创造了```scripts/Makefile.build```来完成这些重复的工作，各个源码目录下只需要配置（最简单的就是配置特殊变量）哪些需要编译到内核、哪些编译成模块以及哪些编译成库，```scripts/Makefile.build```就会根据这些信息在该目录下生成对应的文件。```scripts/Makefile.build```被设计用来处理一个目录，所以理论上给它一级一级的传递目录，达到一种递归的效果，最终就能将整个目录处理完毕。
-
-scripts/Makefile.build
+Linux内核源码可能有很多层目录，不可能为每层目录都设置一个单独的Makefile来配置该层的编译流程，这样只是在重复写Makefile，没有意义。因此Kbuild创造了```scripts/Makefile.build```来完成这些重复的工作，各个源码目录下的Makefile只需要配置（最简单的就是配置特殊变量）哪些需要编译到内核、哪些编译成模块以及哪些编译成库，```scripts/Makefile.build```就会根据这些信息在该目录下生成对应的文件。```scripts/Makefile.build```被设计用来处理一个目录，所以理论上给它一级一级的传递目录，就能达到一种递归的效果，最终就能将整个目录处理完毕。
 
 接下来就需要看scripts/Makefile.build做了什么，直接找```default target```，如下：
 
@@ -601,9 +599,10 @@ endif # builtin-target
 
 ```FORCE```表示此目标每次都会重新生成。
 
-```$(obj-y) ```是经过```Makefile.lib```处理过的，所以其内容为```$(obj)/xx.o```和```$(obj)/xx/built-in.o```。对于$(obj)/xx.o，会应用如下规则：
+```$(obj-y) ```是经过```Makefile.lib```处理过的，所以其内容为```$(obj)/xx.o```和```$(obj)/xx/built-in.o```。对于```$(obj)/xx.o```，会应用如下规则：
 
 ```makefile
+# <scripts/Makfile.build>
 # Built-in and composite module parts
 # 给此规则命名为C2O
 $(obj)/%.o: $(src)/%.c $(recordmcount_source) $(objtool_obj) FORCE
@@ -657,7 +656,7 @@ $(multi-used-y): FORCE				# 给此规则取名为Y2O
 #### command
 
 ```makefile
-# <scripts/Makefile.lib>
+# <scripts/Makefile.build>
 # If the list of objects to link is empty, just create an empty built-in.o
 cmd_make_builtin = $(LD) $(ld_flags) -r -o
 cmd_make_empty_builtin = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS)
@@ -666,7 +665,6 @@ quiet_cmd_link_o_target = LD      $@
 ifdef CONFIG_DEBUG_SECTION_MISMATCH
   cmd_secanalysis = ; scripts/mod/modpost $@
 endif
-
 
 cmd_link_o_target = $(if $(strip $(obj-y)),\		# 先判断$(obj-y)是否为空
 		      $(cmd_make_builtin) $@ $(filter $(obj-y), $^) \	# 如果不为空，使用ld命令把$(obj-y)指定的文件链接成$@，也就是$(obj)/built-in.o
@@ -677,12 +675,12 @@ $(builtin-target): $(obj-y) FORCE
 	$(call if_changed,link_o_target)
 ```
 
-### $(lib-target)
+### 2. $(lib-target)
 
 先看定义
 
 ```makefile
-# <scripts/Makefile.lib>
+# <scripts/Makefile.build>
 ifneq ($(strip $(lib-y) $(lib-m) $(lib-)),)		# 如果$(kbuild-file)定义了lib-y lib-m lib-，表示此目录下应该有lib.a
 lib-target := $(obj)/lib.a
 obj-y += $(obj)/lib-ksyms.o						# lib-ksyms.o是内核中保存的对应的lib.a的符号表，也是要编译到内核中的（TODO: 放到BUILTIN-TARGET)
@@ -693,6 +691,7 @@ endif
 再看规则
 
 ```makefile
+# <scripts/Makefile.build>
 ifdef lib-target
 quiet_cmd_link_l_target = AR      $@
 
@@ -714,36 +713,223 @@ $(lib-y)中的xx.o会通过S2O、C2O或Y2O来生成，随后调用cmd_link_l_tar
 
 
 
-### $(extra-y)
+### 3. $(extra-y)
+
+先看定义
+
+![definition_of_extra-y.png](.\pic\3\definition_of_extra-y.png)
+
+随后在脚本中修改如下：
+
+```makefile
+# <scripts/Makefile.lib>
+
+extra-y		:= $(addprefix $(obj)/,$(extra-y))
+```
+
+并没有$(extra-y)的规则，不过$(extra-y)的值是```xx.o```文件与```vmlinux.lds```。```xx.o```如下
+
+![extra-y_source](.\pic\3\extra-y_source.png)
+
+这些xx.o可以通过S2O或C2O生成。而```vmlinux.lds```规则如下：
+
+```makefile
+# <scripts/Makefile.lib>
+# Linker scripts preprocessor (.lds.S -> .lds)
+# ---------------------------------------------------------------------------
+quiet_cmd_cpp_lds_S = LDS     $@
+      cmd_cpp_lds_S = $(CPP) $(cpp_flags) -P -C -U$(ARCH) \
+	                     -D__ASSEMBLY__ -DLINKER_SCRIPT -o $@ $<
+
+$(obj)/%.lds: $(src)/%.lds.S FORCE
+	$(call if_changed_dep,cpp_lds_S)
+```
+
+if_changed_dep的解析，可以参考[Kbuild系统中的特殊变量与函数](./3/1_Kbuild系统中的特殊变量与函数.md)，可以找到如下日志：
+
+![image-20220801233927880](.\pic\3\rule_make_vmlinux.lds.png)
+
+#### 
+
+### 4. $(obj-m)
+
+先看定义
+
+```obj-m```定义在```$(obj)/Makefile```中，通过```include $(kbuild-file)```将其包含进来，随后经过如下处理：
+
+```makefile
+# <scripts/Makefile.lib>
+# When an object is listed to be built compiled-in and modular,
+# only build the compiled-in version
+
+obj-m := $(filter-out $(obj-y),$(obj-m))   # 将与obj-y中重合的去掉，因为它们肯定要编译到内核中去了，不需要再编译成模块。
+
+# o if we encounter foo/ in $(obj-m), remove it from $(obj-m)
+#   and add the directory to the list of dirs to descend into: $(subdir-m)
+obj-m		:= $(filter-out %/, $(obj-m)) 			# 将obj-m指定的目录移出去，只留下xx.o就行了
+
+obj-m		:= $(addprefix $(obj)/,$(obj-m))   # 添加前缀
+```
+
+再看规则
+
+此时，```obj-m```的值是一系列的```xxx.o```，所以可以通过```S2O```或```C2O```来直接生成，不需要规则。
+
+### 5. $(subdir-ym)
+
+先看定义
+
+```makefile
+# <scripts/Makefile.lib>
+# Handle objects in subdirs
+# ---------------------------------------------------------------------------
+# o if we encounter foo/ in $(obj-y), replace it by foo/built-in.o
+#   and add the directory to the list of dirs to descend into: $(subdir-y)
+# o if we encounter foo/ in $(obj-m), remove it from $(obj-m)
+#   and add the directory to the list of dirs to descend into: $(subdir-m)
+
+__subdir-y	:= $(patsubst %/,%,$(filter %/, $(obj-y)))		# obj-y中的目录拿出来给subdir-y
+subdir-y	+= $(__subdir-y)
+__subdir-m	:= $(patsubst %/,%,$(filter %/, $(obj-m)))		# obj-m中的目录拿出来给subdir-m
+subdir-m	+= $(__subdir-m)
+obj-y		:= $(patsubst %/, %/built-in.o, $(obj-y))	# obj-y中的目录替换成对应目录下的built-in.o
+obj-m		:= $(filter-out %/, $(obj-m))							# obj-m中的目录直接删除掉
+
+# Subdirectories we need to descend into
+
+subdir-ym	:= $(sort $(subdir-y) $(subdir-m))	# obj-y和obj-m中的目录最终都会被放进subdir-ym中
+
+subdir-ym	:= $(addprefix $(obj)/,$(subdir-ym)) # 追加前缀
+```
+
+再看规则
+
+```makefile
+# <scripts/Makefile.build>
+# Descending
+# ---------------------------------------------------------------------------
+PHONY += $(subdir-ym)
+$(subdir-ym):
+	$(Q)$(MAKE) $(build)=$@		
+```
+
+可见对于```subdir-ym```，也就是```$(obj)```下所有```obj-y```和```obj-m```指定的目录，最终都会被赋值给```obj```然后传递给scripts/Makefile.build，然后重复本章节的所有步骤。这也是```scripts/Makefile.build```的设计原则。
+
+### 6. $(modorder-target)
+
+先看定义
+
+```makefile
+# <scripts/Makefile.build>
+modorder-target := $(obj)/modules.order
+```
+
+再看规则
+
+```makefile
+# <scripts/Makefile.lib>
+# Determine modorder.
+# Unfortunately, we don't have information about ordering between -y
+# and -m subdirs.  Just put -y's first.
+modorder	:= $(patsubst %/,%/modules.order, $(filter %/, $(obj-y)) $(obj-m:.o=.ko))
+# obj-y和obj-m此时还未被处理过，所以modorder的值为obj-y以及obj-m中指定的目录下的modules.order
+
+# <scripts/Makefile.build>
+#
+# Rule to create modules.order file
+#
+# Create commands to either record .ko file or cat modules.order from
+# a subdirectory
+modorder-cmds =						\
+	$(foreach m, $(modorder),			\
+		$(if $(filter %/modules.order, $m),	\
+			cat $m;, echo kernel/$m;))
+# 对于obj-y和obj-m指定的所有目录下的modules.order文件，将该文件打印出来并打印文件的名字。
+
+$(modorder-target): $(subdir-ym) FORCE
+	$(Q)(cat /dev/null; $(modorder-cmds)) > $@
+# 将$(obj)下所有obj-y和obj-m指定的目录下的modules.order的内容和文件名放进$(obj)/modules.order中
+```
 
 #### prerequisite
 
-#### command
-
-### $(obj-m)
-
-#### prerequisite
+依赖就是```subdir-ym```，根据上一节，也就是```scripts/Makefile.build```在处理了所有obj-y和obj-m中指定的目录后，才会执行当前规则。
 
 #### command
 
-### $(modorder-target)
+将$(obj)下所有obj-y和obj-m指定的目录下的modules.order的内容和文件名放进$(obj)/modules.order中
 
-#### prerequisite
+### 7. $(always)
 
-#### command
+此变量代表一定会被生成的目标，如x86下的always
 
-### $(subdir-ym)
+![always_target_x86](.\pic\always_target_x86.png)
 
-#### prerequisite
+而arm64下，则是典型的必须生成的dtb文件，如下：
 
-#### command
+<img src=".\pic\always_target_arm64.png" alt="always_target_arm64" style="zoom:25%;" />
 
-### $(always)
+比如对于rockchip的芯片来说，如下：
 
-#### prerequisite
+```makefile
+# <arch/arm64/boot/dts/rockchip/Makefile>
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3368-evb-act8846.dtb
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3368-geekbox.dtb
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3368-orion-r68-meta.dtb
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3368-px5-evb.dtb
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3368-r88.dtb
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-evb.dtb
 
-#### command
+always		:= $(dtb-y)
+subdir-y	:= $(dts-dirs)
+clean-files	:= *.dtb
+```
+
+而对于dts到dtb的规则，如下：
+
+```makefile
+# <scripts/Makefile.build>
+quiet_cmd_dtc = DTC     $@
+cmd_dtc = mkdir -p $(dir ${dtc-tmp}) ; \
+	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
+	$(DTC) -O dtb -o $@ -b 0 \
+		-i $(dir $<) $(DTC_FLAGS) \
+		-d $(depfile).dtc.tmp $(dtc-tmp) ; \
+	cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)
+
+$(obj)/%.dtb: $(src)/%.dts FORCE
+	$(call if_changed_dep,dtc)
+
+dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
+```
+
+
+
+## 3. 总结
+
+经过上述分析之后，```$(srctree)/Makefile```将```$(srctree)```下的目录作为obj的值传递给```$(srctree)/scripts/Makefile.build```后，Makefile.build会根据$(obj)/Makefile下所定义obj-y、lib-y等变量生成编译内核时所需要的$(obj)/built-in.o等文件，为链接生成vmlinux做准备。
+
+
+
+# 4. scripts/link-vmlinux.sh
+
+
+
+
 
 # _all:module
 
 TODO: 待完成
+
+
+
+
+
+
+
+
+
+
+
+
+
