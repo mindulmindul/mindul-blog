@@ -391,7 +391,7 @@ $(srctree)代表内核源码根目录
 
 ## command
 
-```if_changed```的详细分析过程参考[Kbuild系统中的特殊变量与函数](./3/1_Kbuild系统中的特殊变量与函数.md)，这里简单介绍下其大概功能：
+```if_changed```的详细分析过程参考[Kbuild系统中的特殊变量与函数](./3.1_Kbuild系统中的特殊变量或函数简介.md)，这里简单介绍下其大概功能：
 
 1. 判断已经生成的依赖是否有更新以及是否有未生成的依赖，如果满足条件则执行2；否则结束；
 2. 根据make命令的V参数，判断打印命令的详情或是简略信息或是原因；
@@ -411,7 +411,7 @@ $(srctree)代表内核源码根目录
 
 ![if_changed_vmlinux](.\pic\3\if_changed_vmlinux.png)
 
-![.vmlinux.cmd](.\pic\3\.vmlinux.cmd.png)
+![.vmlinux.cmd](.\pic\3\vmlinux.cmd.png)
 
 
 
@@ -747,7 +747,7 @@ $(obj)/%.lds: $(src)/%.lds.S FORCE
 
 if_changed_dep的解析，可以参考[Kbuild系统中的特殊变量与函数](./3/1_Kbuild系统中的特殊变量与函数.md)，可以找到如下日志：
 
-![image-20220801233927880](.\pic\3\rule_make_vmlinux.lds.png)
+![rule_make_vmlinux.lds](.\pic\3\rule_make_vmlinux.lds.png)
 
 #### 
 
@@ -863,11 +863,11 @@ $(modorder-target): $(subdir-ym) FORCE
 
 此变量代表一定会被生成的目标，如x86下的always
 
-![always_target_x86](.\pic\always_target_x86.png)
+![always_target_x86](.\pic\3\always_target_x86.png)
 
 而arm64下，则是典型的必须生成的dtb文件，如下：
 
-<img src=".\pic\always_target_arm64.png" alt="always_target_arm64" style="zoom:25%;" />
+<img src=".\pic\3\always_target_arm64.png" alt="always_target_arm64" />
 
 比如对于rockchip的芯片来说，如下：
 
